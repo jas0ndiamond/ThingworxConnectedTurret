@@ -1,0 +1,40 @@
+<configuration>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%date{yyyy-MM-dd HH:mm:ss.SSSZ} [L: %level] [O: %logger{8}] [T: %thread] %msg%n%rootException</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>thingworxConnectedTurret.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		  <!-- rollover daily -->
+		  <fileNamePattern>thingworxConnectedTurret-%d.%i.log</fileNamePattern>
+		  <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+			<!-- or whenever the file size reaches 100MB -->
+			<maxFileSize>100MB</maxFileSize>
+		  </timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+		  <pattern>%date{yyyy-MM-dd HH:mm:ss.SSSZ} [L: %level] [O: %logger{8}] [T: %thread] %msg%n%rootException</pattern>
+		</encoder>
+	</appender>
+	
+	<!-- <logger name="io.netty" level="WARN"></logger> -->
+	<logger name="com.thingworx" level="DEBUG"></logger>
+	<logger name="org.jason" level="DEBUG"></logger>
+	
+	<!--
+		<logger name="io.netty" level="WARN"></logger>
+		<logger name="com.thingworx.communications.client.connection.netty" level="ERROR"></logger>
+		<logger name="com.thingworx.sdk.scale" level="INFO"></logger>
+		<logger name="com.thingworx.communications.common.endpoints" level="DEBUG"></logger>
+		<logger name="com.thingworx.communications.client.endpoints" level="DEBUG"></logger>
+	-->
+	<root level="DEBUG">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="ROLLING" />
+	</root>
+	
+</configuration>

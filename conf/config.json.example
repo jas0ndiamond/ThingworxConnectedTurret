@@ -1,0 +1,66 @@
+{
+	"turret": {
+		"username": "jason",
+		"tempSensor": {
+			"bus": 1,
+			"address": "0x77"
+		},
+		"name": "Turret 1",
+		"magazines": {
+			"NStrikeStandard": {
+				"capacity": 10
+			},
+			"NStrikeExtended": {
+				"capacity": 18
+			}
+		},
+		"panning": {
+			"hat_address": "0x60",
+			"hat_freq": 1600,
+			"motors": {
+				"motor_x": {
+					"port": 1,
+					"speed": 3,
+					"steps_per_revolution": 200,
+					"min": -50,
+					"max": 50,
+					"style": 3
+				},
+				"motor_y": {
+					"port": 2,
+					"speed": 3,
+					"steps_per_revolution": 200,
+					"min": -50,
+					"max": 50, 
+					"style": 3
+				}
+			}
+		},
+		"movement": {},
+		"desc": "CS18",
+		"rated_specs": {
+			"barrel_max_rounds": 2000,
+			"barrel_max_temp": 50,
+			"clean_max_rounds": 400,
+			"min_velocity": 100
+		},
+		"firecontrol": {
+			"name": "CS18GPIOFireControl",
+			"distance_to_exit_pir": 10,
+			"min_round_velocity": 300,
+			"trigger_duration": 450,
+			"accel_start_duration": 1000,
+			"accel_stop_duration": 250,
+			"trigger_pin": 0,
+			"accel_pin": 7,
+			"barrel_exit_pin": 3,
+			"burstfire": false
+		}
+	},
+	"thingworx": {
+		"thingname": "ConnectedTurret",
+		"thingdesc": "Test Turret",
+		"appkey": "32491397-f468-4dbc-858a-376ff92aae02",
+		"uri": "ws://host:8080/Thingworx/WS"
+	}
+}
