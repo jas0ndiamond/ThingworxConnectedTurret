@@ -31,6 +31,7 @@ import com.thingworx.types.primitives.BooleanPrimitive;
 import com.thingworx.types.primitives.DatetimePrimitive;
 import com.thingworx.types.primitives.IntegerPrimitive;
 import com.thingworx.types.primitives.NumberPrimitive;
+import com.thingworx.types.primitives.StringPrimitive;
 
 public class TurretThing extends VirtualThing implements Runnable {
 
@@ -90,7 +91,24 @@ public class TurretThing extends VirtualThing implements Runnable {
 	private Thread _shutdownThread = null;
 	
 	private TurretControl turret;
+	
+	private final static String MOTOR_X_TRAVEL_THRESHOLD_FIELD = "MotorXTravelThreshold";
+	private final static String MOTOR_Y_TRAVEL_THRESHOLD_FIELD = "MotorYTravelThreshold";
+	private final static String TOTAL_ROUNDS_FIRED_THRESHOLD_FIELD = "TotalRoundsFiredThreshold";
+	private final static String ACCEL_DURATION_THRESHOLD_FIELD = "AccelDurationThreshold";
+	private final static String TRIGGER_DURATION_THRESHOLD_FIELD = "TriggerDurationThreshold";
 
+	private final static String MOTOR_X_TRAVEL_THRESHOLD_EXCEEDED_FIELD = "MotorXTravelThresholdExceeded";
+	private final static String MOTOR_Y_TRAVEL_THRESHOLD_EXCEEDED_FIELD = "MotorYTravelThresholdExceeded";
+	private final static String TOTAL_ROUNDS_FIRED_THRESHOLD_EXCEEDED_FIELD = "TotalRoundsFiredThresholdExceeded";
+	private final static String ACCEL_DURATION_THRESHOLD_EXCEEDED_FIELD = "AccelDurationThresholdExceeded";
+	private final static String TRIGGER_DURATION_THRESHOLD_EXCEEDED_FIELD = "TriggerDurationThresholdExceeded";	
+	
+	private final static String MOTOR_X_SERVICE_REQUIRED_FIELD = "MotorXServiceRequired";
+	private final static String MOTOR_Y_SERVICE_REQUIRED_FIELD = "MotorYServiceRequired";
+	private final static String CYCLE_SERVICE_REQUIRED_FIELD = "CycleServiceRequired";
+	private final static String ACCEL_SERVICE_REQUIRED_FIELD = "AccelServiceRequired";
+	private final static String TRIGGER_SERVICE_REQUIRED_FIELD = "TriggerServiceRequired";
 	
 	private final static Logger logger = LoggerFactory.getLogger(TurretThing.class); 
 
@@ -174,28 +192,42 @@ public class TurretThing extends VirtualThing implements Runnable {
 		super.defineProperty(new PropertyDefinition(JVM_MEM_FREE_FIELD, JVM_MEM_FREE_FIELD, BaseTypes.INTEGER));
 		super.defineProperty(new PropertyDefinition(JVM_MEM_USED_FIELD, JVM_MEM_USED_FIELD, BaseTypes.INTEGER));
 
-//		super.defineService(new ServiceDefinition("Cycle", "Cycle the turret"));
-//		super.defineService(new ServiceDefinition("Reload", "Reload the turret"));
-//		super.defineService(new ServiceDefinition("SetSafety", "Set the safety of the Turret"));
-//		super.defineService(new ServiceDefinition("PanX", "Pan the turret left or right"));
-//		super.defineService(new ServiceDefinition("PanY", "Pan the turret up or down"));
-		
-		super.defineEvent(new EventDefinition());
-		
-//		System.out.println("Properties");
-//
-//		
-//		for(PropertyDefinition prop : super.getThingShape().getPropertyDefinitions().values())
-//		{
-//			System.out.println("Found property definition: " + prop.toValueCollection().toJSON().toString());
-//		}
-//		
-//		for(Entry<String, Property> prop : getProperties().entrySet())
-//		{
-//			System.out.println(prop.getKey() + ": " + prop.getValue());
-//		}
-	}
+		EventDefinition motorXThresholdEvent = new EventDefinition();
+		motorXThresholdEvent.setName(MOTOR_X_TRAVEL_THRESHOLD_EXCEEDED_FIELD);
+		motorXThresholdEvent.setDataShapeName(MOTOR_X_TRAVEL_THRESHOLD_EXCEEDED_FIELD);
+		motorXThresholdEvent.setInvocable(true);
+		motorXThresholdEvent.setPropertyEvent(false);
+		super.defineEvent(motorXThresholdEvent);
 
+		EventDefinition motorYThresholdEvent = new EventDefinition();
+		motorYThresholdEvent.setName(MOTOR_Y_TRAVEL_THRESHOLD_EXCEEDED_FIELD);
+		motorYThresholdEvent.setDataShapeName(MOTOR_Y_TRAVEL_THRESHOLD_EXCEEDED_FIELD);
+		motorYThresholdEvent.setInvocable(true);
+		motorYThresholdEvent.setPropertyEvent(false);
+		super.defineEvent(motorYThresholdEvent);
+		
+		EventDefinition totalRoundsFiredThresholdEvent = new EventDefinition();
+		totalRoundsFiredThresholdEvent.setName(TOTAL_ROUNDS_FIRED_THRESHOLD_EXCEEDED_FIELD);
+		totalRoundsFiredThresholdEvent.setDataShapeName(TOTAL_ROUNDS_FIRED_THRESHOLD_EXCEEDED_FIELD);
+		totalRoundsFiredThresholdEvent.setInvocable(true);
+		totalRoundsFiredThresholdEvent.setPropertyEvent(false);		
+		super.defineEvent(totalRoundsFiredThresholdEvent);
+		
+		EventDefinition accelDurationThresholdEvent = new EventDefinition();
+		accelDurationThresholdEvent.setName(ACCEL_DURATION_THRESHOLD_EXCEEDED_FIELD);
+		accelDurationThresholdEvent.setDataShapeName(ACCEL_DURATION_THRESHOLD_EXCEEDED_FIELD);
+		accelDurationThresholdEvent.setInvocable(true);
+		accelDurationThresholdEvent.setPropertyEvent(false);		
+		super.defineEvent(accelDurationThresholdEvent);
+		
+		EventDefinition triggerDurationThresholdEvent = new EventDefinition();
+		triggerDurationThresholdEvent.setName(TRIGGER_DURATION_THRESHOLD_EXCEEDED_FIELD);
+		triggerDurationThresholdEvent.setDataShapeName(TRIGGER_DURATION_THRESHOLD_EXCEEDED_FIELD);
+		triggerDurationThresholdEvent.setInvocable(true);
+		triggerDurationThresholdEvent.setPropertyEvent(false);		
+		super.defineEvent(triggerDurationThresholdEvent);
+		
+	}
 
 	// From the VirtualThing class
 	// This method will get called when a connect or reconnect happens
@@ -217,16 +249,8 @@ public class TurretThing extends VirtualThing implements Runnable {
 			logger.warn("Exception while writing initial demoRunning", e);
 		}
 	}
-
-//	@Override
-//	public void initializeFromAnnotations()
-//	{
-//		//super.initializeFromAnnotations();
-//		
-//	}
 	
 	private void init() throws Exception {
-//		initializeFromAnnotations();
 
 		super.initialize();
 		
@@ -266,6 +290,26 @@ public class TurretThing extends VirtualThing implements Runnable {
 		reloadFields.addFieldDefinition(new FieldDefinition(CURRENT_MAG_CAPACITY_FIELD, BaseTypes.INTEGER));
 		reloadFields.addFieldDefinition(new FieldDefinition(CURRENT_MAG_NAME_FIELD, BaseTypes.STRING));
 		defineDataShapeDefinition("TurretReloadResult", reloadFields);
+		
+		FieldDefinitionCollection motorXEventFields = new FieldDefinitionCollection();
+		motorXEventFields.addFieldDefinition(new FieldDefinition(CommonPropertyNames.PROP_MESSAGE,BaseTypes.STRING));
+		defineDataShapeDefinition(MOTOR_X_TRAVEL_THRESHOLD_EXCEEDED_FIELD, motorXEventFields);
+		
+		FieldDefinitionCollection motorYEventFields = new FieldDefinitionCollection();
+		motorYEventFields.addFieldDefinition(new FieldDefinition(CommonPropertyNames.PROP_MESSAGE,BaseTypes.STRING));
+		defineDataShapeDefinition(MOTOR_Y_TRAVEL_THRESHOLD_EXCEEDED_FIELD, motorYEventFields);
+		
+		FieldDefinitionCollection triggerEventFields = new FieldDefinitionCollection();
+		triggerEventFields.addFieldDefinition(new FieldDefinition(CommonPropertyNames.PROP_MESSAGE,BaseTypes.STRING));
+		defineDataShapeDefinition(TOTAL_ROUNDS_FIRED_THRESHOLD_EXCEEDED_FIELD, triggerEventFields);
+		
+		FieldDefinitionCollection accelEventFields = new FieldDefinitionCollection();
+		accelEventFields.addFieldDefinition(new FieldDefinition(CommonPropertyNames.PROP_MESSAGE,BaseTypes.STRING));
+		defineDataShapeDefinition(ACCEL_DURATION_THRESHOLD_EXCEEDED_FIELD, accelEventFields);
+		
+		FieldDefinitionCollection faultFields = new FieldDefinitionCollection();
+		faultFields.addFieldDefinition(new FieldDefinition(CommonPropertyNames.PROP_MESSAGE,BaseTypes.STRING));
+		defineDataShapeDefinition(TRIGGER_DURATION_THRESHOLD_EXCEEDED_FIELD, faultFields);
 	}
 
 
@@ -304,11 +348,77 @@ public class TurretThing extends VirtualThing implements Runnable {
 		super.setProperty(JVM_MEM_USED_FIELD, new NumberPrimitive(jvmMemUtil[1]));
 		super.setProperty(JVM_MEM_FREE_FIELD, new NumberPrimitive(jvmMemUtil[2]));
 		
-		//check maintenance cycle 
-		
-		
 		super.updateSubscribedProperties(SUBSCRIBED_PROPS_TIMEOUT);
-		super.updateSubscribedEvents(SUBSCRIBED_EVENTS_TIMEOUT);
+		
+		
+		//check maintenance cycle 
+		ValueCollection platformProperties = getClient().readProperties(ThingworxEntityTypes.Things, getName(), 3000).getFirstRow();
+		int motorXTravelThreshold = (int)platformProperties.getValue(MOTOR_X_TRAVEL_THRESHOLD_FIELD);
+		int motorYTravelThreshold = (int)platformProperties.getValue(MOTOR_Y_TRAVEL_THRESHOLD_FIELD);
+		int totalRoundsFiredThreshold = (int)platformProperties.getValue(TOTAL_ROUNDS_FIRED_THRESHOLD_FIELD);
+		int accelDurationThreshold = (int)platformProperties.getValue(ACCEL_DURATION_THRESHOLD_FIELD);
+		int triggerDurationThreshold = (int)platformProperties.getValue(TRIGGER_DURATION_THRESHOLD_FIELD);
+		
+		boolean serviceRequired = false;
+		if( (int)getProperty(MOTOR_X_TRAVEL_FIELD).getValue().getValue() > motorXTravelThreshold)
+		{
+			ValueCollection eventInfo = new ValueCollection();
+			eventInfo.put(CommonPropertyNames.PROP_MESSAGE, 
+					new StringPrimitive("Motor X has exceeded its step threshold"));
+			// Queue the event
+			super.queueEvent(MOTOR_X_TRAVEL_THRESHOLD_EXCEEDED_FIELD, DateTime.now(), eventInfo);
+			
+			serviceRequired = true;
+		}
+		
+		if( (int)getProperty(MOTOR_Y_TRAVEL_FIELD).getValue().getValue() > motorYTravelThreshold)
+		{
+			ValueCollection eventInfo = new ValueCollection();
+			eventInfo.put(CommonPropertyNames.PROP_MESSAGE, 
+					new StringPrimitive("Motor Y has exceeded its step threshold"));			
+			// Queue the event
+			super.queueEvent(MOTOR_Y_TRAVEL_THRESHOLD_EXCEEDED_FIELD, DateTime.now(), eventInfo);
+			
+			serviceRequired = true;			
+		}
+		
+		if( (long)getProperty(TOTAL_ROUNDS_FIRED_FIELD).getValue().getValue() > totalRoundsFiredThreshold)
+		{
+			ValueCollection eventInfo = new ValueCollection();
+			eventInfo.put(CommonPropertyNames.PROP_MESSAGE, 
+					new StringPrimitive("Firecontrol has exceeded its cycle count threshold"));
+			// Queue the event
+			super.queueEvent(TOTAL_ROUNDS_FIRED_THRESHOLD_EXCEEDED_FIELD, DateTime.now(), eventInfo);
+			
+			serviceRequired = true;
+		}
+		
+		if( (long)getProperty(ACCEL_DURATION_FIELD).getValue().getValue() > accelDurationThreshold)
+		{
+			ValueCollection eventInfo = new ValueCollection();
+			eventInfo.put(CommonPropertyNames.PROP_MESSAGE, 
+					new StringPrimitive("The accelerator motor has exceeded its runtime threshold"));
+			// Queue the event
+			super.queueEvent(ACCEL_DURATION_THRESHOLD_EXCEEDED_FIELD, DateTime.now(), eventInfo);
+			
+			serviceRequired = true;
+		}
+		
+		if( (long)getProperty(TRIGGER_DURATION_FIELD).getValue().getValue() > triggerDurationThreshold)
+		{
+			ValueCollection eventInfo = new ValueCollection();
+			eventInfo.put(CommonPropertyNames.PROP_MESSAGE, 
+					new StringPrimitive("The trigger motor has exceeded its runtime threshold"));
+			// Queue the event
+			super.queueEvent(TRIGGER_DURATION_THRESHOLD_EXCEEDED_FIELD, DateTime.now(), eventInfo);
+			
+			serviceRequired = true;
+		}
+		
+		if(serviceRequired)
+		{
+			super.updateSubscribedEvents(SUBSCRIBED_EVENTS_TIMEOUT);
+		}
 	}
 
 	//hold turret service
@@ -396,42 +506,123 @@ public class TurretThing extends VirtualThing implements Runnable {
 			name = "PerformService", 
 			description = "Acknowledge maintenance performed on the turret"
 	)
-	@ThingworxServiceResult
+	public void PerformService
 	(
-			name = CommonPropertyNames.PROP_RESULT, 
-			description = "InfoTable of service result", 
-			baseType = "INFOTABLE",
-			aspects = {  }
-	)
-	public InfoTable PerformService() {
-
+		@ThingworxServiceParameter
+		( 
+			name="servicedXMotor", 
+			description="Flag noting the x motor was serviced", 
+			baseType="BOOLEAN" 
+		) Boolean servicedXMotor,
+		@ThingworxServiceParameter
+		( 
+			name="servicedYMotor", 
+			description="Flag noting the y motor was serviced", 
+			baseType="BOOLEAN" 
+		) Boolean servicedYMotor,
+		@ThingworxServiceParameter
+		( 
+			name="servicedTrigger", 
+			description="Flag noting the trigger was serviced", 
+			baseType="BOOLEAN" 
+		) Boolean servicedTrigger,
+		@ThingworxServiceParameter
+		( 
+			name="servicedAccel", 
+			description="Flag noting the accel was serviced", 
+			baseType="BOOLEAN" 
+		) Boolean servicedAccel,
+		@ThingworxServiceParameter
+		( 
+			name="servicedCycle", 
+			description="Flag noting the cycle was serviced", 
+			baseType="BOOLEAN" 
+		) Boolean servicedCycle
+	) throws Exception
+	{
 		logger.debug("PerformService invoked");
-
 		
-		InfoTable table = new InfoTable();
-		
-		try
-		{		
-			super.setProperty(TOTAL_ROUNDS_FIRED_FIELD, 0);
-			super.setProperty(MOTOR_X_TRAVEL_FIELD, 0);
-			super.setProperty(MOTOR_Y_TRAVEL_FIELD, 0);
-			super.setProperty(LAST_SERVICE_TIME_FIELD, new DatetimePrimitive(DateTime.now()));
 
-			super.updateSubscribedProperties(SUBSCRIBED_PROPS_TIMEOUT);
-			
-			ValueCollection entry = new ValueCollection();
-			entry.clear();
-			entry.SetLongValue(LAST_SERVICE_TIME_FIELD, System.currentTimeMillis());
-			table.addRow(entry);			
-		}
-		catch (Exception e)
+		boolean servicePerformed = false;
+
+		if(servicedXMotor)
 		{
-			logger.warn("Exception occured during service: ", e);
+			super.setProperty(MOTOR_X_TRAVEL_FIELD, 0);
+
+			getClient().writeProperty(
+					ThingworxEntityTypes.Things, getName(), 
+					MOTOR_X_SERVICE_REQUIRED_FIELD, 
+					new BooleanPrimitive(false), 
+					3000
+					);
+
+			servicePerformed = true;
+		}
+
+		if(servicedYMotor)
+		{
+			super.setProperty(MOTOR_Y_TRAVEL_FIELD, 0);
+
+			getClient().writeProperty(
+					ThingworxEntityTypes.Things, getName(), 
+					MOTOR_Y_SERVICE_REQUIRED_FIELD, 
+					new BooleanPrimitive(false), 
+					3000
+					);
+
+			servicePerformed = true;
+		}
+
+		if(servicedTrigger)
+		{
+			super.setProperty(TOTAL_ROUNDS_FIRED_FIELD, 0);
+
+			getClient().writeProperty(
+					ThingworxEntityTypes.Things, getName(), 
+					CYCLE_SERVICE_REQUIRED_FIELD, 
+					new BooleanPrimitive(false), 
+					3000
+					);
+
+			servicePerformed = true;
+		}
+
+		if(servicedAccel)
+		{
+			super.setProperty(ACCEL_DURATION_FIELD, 0);
+
+			getClient().writeProperty(
+					ThingworxEntityTypes.Things, getName(), 
+					ACCEL_SERVICE_REQUIRED_FIELD, 
+					new BooleanPrimitive(false), 
+					3000
+					);
+
+			servicePerformed = true;
+		}
+
+		if(servicedCycle)
+		{
+			super.setProperty(TRIGGER_DURATION_FIELD, 0);
+
+			getClient().writeProperty(
+					ThingworxEntityTypes.Things, getName(), 
+					TRIGGER_SERVICE_REQUIRED_FIELD, 
+					new BooleanPrimitive(false), 
+					3000
+					);
+
+			servicePerformed = true;
+		}
+
+		if(servicePerformed)
+		{
+			super.setProperty(LAST_SERVICE_TIME_FIELD, new DatetimePrimitive(DateTime.now()));
+			super.updateSubscribedProperties(SUBSCRIBED_PROPS_TIMEOUT);
 		}
 		
 		logger.debug("PerformService completed");
 		
-		return table;
 	}
 	
 	@ThingworxServiceDefinition
@@ -996,17 +1187,5 @@ public class TurretThing extends VirtualThing implements Runnable {
 		{
 			logger.warn("Exception occurred during shutdown", x);
 		}
-	}
-
-	private class ServiceCheckThresholds
-	{
-		public static final int X_STEPS_THRESHOLD = 50000;
-		public static final int Y_STEPS_THRESHOLD = 40000;
-		public static final int CYCLE_COUNT_THRESHOLD = 100;
-		public static final int FAILED_CYCLE_COUNT_THRESHOLD = 50;
-		public static final int TIME_THRESHOLD = 2; //hours
-		public static final int ACCEL_DURATION_THRESHOLD = 10000;
-		public static final int TRIGGER_DURATION_THRESHOLD = 10000;
-		
 	}
 }
