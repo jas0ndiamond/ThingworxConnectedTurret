@@ -6,8 +6,6 @@ import org.jason.turretcontrol.config.ConfigLoader;
 import com.thingworx.communications.client.ClientConfigurator;
 import com.thingworx.communications.client.ConnectedThingClient;
 import com.thingworx.communications.client.things.VirtualThing;
-import com.thingworx.relationships.RelationshipTypes.ThingworxEntityTypes;
-import com.thingworx.types.primitives.BooleanPrimitive;
 
 public class ThingworxConnectedTurret extends ConnectedThingClient {
 
